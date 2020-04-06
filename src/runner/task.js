@@ -99,14 +99,25 @@ export default class Task extends AsyncEventEmitter {
     }
 
     _createBrowserJobs (proxy, opts) {
-        return this.browserConnectionGroups.map(browserConnectionGroup => {
+        const [ browserConnectionGroup ] = this.browserConnectionGroups;
+        const fixtureSet = new Set(this.tests.map(test => test.fixture.id));
+        const fixtures = [];
+        for (const fixtureEl of fixtureSet)
+            fixtures.push(fixtureEl);
+
+        const fixtureJobs = fixtures.map(fixtureId => {
             const job = new BrowserJob(this.tests, browserConnectionGroup, proxy, this.screenshots, this.warningLog, this.fixtureHookController, opts);
 
             this._assignBrowserJobEventHandlers(job);
-            browserConnectionGroup.map(bc => bc.addJob(job));
+
+            job.testRunControllerQueue = job.testRunControllerQueue.filter(tc => tc.test.fixture.id === fixtureId);
 
             return job;
         });
+
+        browserConnectionGroup.map((bc, index) => bc.addJob(fixtureJobs[index]));
+
+        return fixtureJobs;
     }
 
     unRegisterClientScriptRouting () {
