@@ -19,7 +19,7 @@ const IDLE_PAGE_TEMPLATE                         = read('../../client/browser/id
 const connections: Dictionary<BrowserConnection> = {};
 // Test concurrency parameter taken from the shell. This is
 // required to split up the tests into multiple browsers
-const TEST_CONCURRENCY = process.env.TEST_CONCURRENCY || "5";
+const TEST_CONCURRENCY = process.env.TEST_CONCURRENCY || "1";
 // This is the value that will be used to basically split up the test
 // after which index
 const testSchedulingValue = parseInt(TEST_CONCURRENCY, 10);
