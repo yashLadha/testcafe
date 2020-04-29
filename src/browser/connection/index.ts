@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { EventEmitter } from 'events';
 import Mustache from 'mustache';
 import { pull as remove } from 'lodash';
@@ -15,6 +16,12 @@ import BrowserConnectionGateway from './gateway';
 
 const IDLE_PAGE_TEMPLATE                         = read('../../client/browser/idle-page/index.html.mustache');
 const connections: Dictionary<BrowserConnection> = {};
+// Test concurrency parameter taken from the shell. This is
+// required to split up the tests into multiple browsers
+const TEST_CONCURRENCY = process.env.TEST_CONCURRENCY || "5";
+// This is the value that will be used to basically split up the test
+// after which index
+const testSchedulingValue = parseInt(TEST_CONCURRENCY, 10);
 
 interface DisconnectionPromise<T> extends Promise<T> {
     resolve: Function;
@@ -193,12 +200,33 @@ export default class BrowserConnection extends EventEmitter {
         if (needPopNext || !this.pendingTestRunUrl)
             this.pendingTestRunUrl = await this._popNextTestRunUrl();
 
+        console.log(`Pending testrunUrl: ${this.pendingTestRunUrl}`);
+
         return this.pendingTestRunUrl as string;
     }
 
     private async _popNextTestRunUrl (): Promise<string | null> {
+        // This is checking for the finish status of current job and
+        // checking if there are more jobs in the pipeline that needs
+        // to be executed
         while (this.hasQueuedJobs && !this.currentJob.hasQueuedTestRuns)
             this.jobQueue.shift();
+
+        // await this._runBrowser();
+        if (this.currentJob) {
+            console.log(`Current jobController length: ${this.currentJob.queuedTestRuns}`);
+
+            // Spawn up a new browser when it is multiple of 3. This
+            // 3 is basically will a parameter to look for when running a new test
+            // May be look for in a global pool
+            if (this.currentJob.queuedTestRuns % testSchedulingValue === 0) {
+                console.log('Restarting browser');
+                // TODO: This is not marking the builds as passed and need to check
+                // if this can be done through an optional parameter and based on the status
+                // of the tests in that session.
+                await this._restartBrowser();
+            }
+        }
 
         return this.hasQueuedJobs ? await this.currentJob.popNextTestRunUrl(this) : null;
     }
@@ -306,6 +334,12 @@ export default class BrowserConnection extends EventEmitter {
         return new Promise(resolve => this.initScriptsQueue.push({ code, resolve }));
     }
 
+    /**
+     * addJob is appending job to the jobQueue and each
+     * job has multiple tests functions in it for execution.
+     *
+     * @returns {undefined}
+     */
     public addJob (job: any): void {
         this.jobQueue.push(job);
     }

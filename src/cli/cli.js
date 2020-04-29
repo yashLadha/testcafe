@@ -68,13 +68,10 @@ async function runTests (argParser) {
     const proxy             = opts.proxy;
     const proxyBypass       = opts.proxyBypass;
 
-    log.showSpinner();
-
     const { hostname, ssl, dev, experimentalCompilerService } = opts;
 
     const testCafe = await createTestCafe({
         developmentMode: dev,
-
         hostname,
         port1,
         port2,
@@ -106,8 +103,6 @@ async function runTests (argParser) {
         .screenshots(opts.screenshots)
         .startApp(opts.app, opts.appInitDelay)
         .clientScripts(argParser.opts.clientScripts);
-
-    runner.once('done-bootstrapping', () => log.hideSpinner());
 
     try {
         const runOpts = argParser.getRunOptions();

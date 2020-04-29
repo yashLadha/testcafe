@@ -115,6 +115,10 @@ export default class BrowserJob extends AsyncEventEmitter {
         return !!this.testRunControllerQueue.length;
     }
 
+    get queuedTestRuns () {
+        return this.testRunControllerQueue.length;
+    }
+
     async popNextTestRunUrl (connection) {
         while (this.testRunControllerQueue.length) {
             // NOTE: before hook for test run fixture is currently
