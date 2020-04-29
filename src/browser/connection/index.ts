@@ -75,6 +75,7 @@ export default class BrowserConnection extends EventEmitter {
     private readonly activeWindowIdUrl: string;
     private statusDoneUrl: string;
     private switchingToIdle: boolean;
+    private isFirst: boolean;
 
     public idle: boolean;
 
@@ -93,6 +94,7 @@ export default class BrowserConnection extends EventEmitter {
         this.browserConnectionGateway = gateway;
         this.disconnectionPromise     = null;
         this.testRunAborted           = false;
+        this.isFirst = true;
 
         this.browserInfo                           = browserInfo;
         this.browserInfo.userAgentProviderMetaInfo = '';
@@ -214,18 +216,21 @@ export default class BrowserConnection extends EventEmitter {
 
         // await this._runBrowser();
         if (this.currentJob) {
-            console.log(`Current jobController length: ${this.currentJob.queuedTestRuns}`);
+            const queueLength = this.currentJob.queuedTestRuns;
+            console.log(`Current jobController length: ${queueLength}`);
 
             // Spawn up a new browser when it is multiple of 3. This
             // 3 is basically will a parameter to look for when running a new test
             // May be look for in a global pool
-            if (this.currentJob.queuedTestRuns % testSchedulingValue === 0) {
+            if (!this.isFirst && queueLength % testSchedulingValue === 0) {
                 console.log('Restarting browser');
                 // TODO: This is not marking the builds as passed and need to check
                 // if this can be done through an optional parameter and based on the status
                 // of the tests in that session.
                 await this._restartBrowser();
             }
+
+            this.isFirst = false;
         }
 
         return this.hasQueuedJobs ? await this.currentJob.popNextTestRunUrl(this) : null;
