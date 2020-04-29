@@ -13,6 +13,7 @@ import { RUNTIME_ERRORS } from '../../errors/types';
 import { HEARTBEAT_TIMEOUT, BROWSER_RESTART_TIMEOUT } from '../../utils/browser-connection-timeouts';
 import { Dictionary } from '../../configuration/interfaces';
 import BrowserConnectionGateway from './gateway';
+import { inspect } from 'util';
 
 const IDLE_PAGE_TEMPLATE                         = read('../../client/browser/idle-page/index.html.mustache');
 const connections: Dictionary<BrowserConnection> = {};
@@ -170,6 +171,7 @@ export default class BrowserConnection extends EventEmitter {
         }
         catch (err) {
             // NOTE: A warning would be really nice here, but it can't be done while log is stored in a task.
+            console.log(`Error captured while closing the browser: ${inspect(err, { depth: 1 })}`);
         }
     }
 
