@@ -44,7 +44,7 @@ async function getConfiguration (args) {
     if (args.length === 1 && typeof args[0] === 'object')
         await configuration.init(args[0]);
     else {
-        const [hostname, port1, port2, ssl, developmentMode, retryTestPages] = args;
+        const [hostname, port1, port2, ssl, developmentMode = false, retryTestPages] = args;
 
         await configuration.init({
             hostname,
