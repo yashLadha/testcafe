@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { readSync as read } from 'read-file-relative';
 import { respond404, respond500, respondWithJSON, redirect, preventCaching } from '../../utils/http';
 import RemotesQueue from './remotes-queue';
@@ -36,8 +37,10 @@ export default class BrowserConnectionGateway {
 
             if (connection)
                 handler(req, res, connection);
-            else
+            else {
+                console.log(`Sending 404 for this ${url}`);
                 respond404(res);
+            }
         });
     }
 
@@ -127,6 +130,7 @@ export default class BrowserConnectionGateway {
 
     private static async _onStatusRequestCore (req: IncomingMessage, res: ServerResponse, connection: BrowserConnection, isTestDone: boolean): Promise<void> {
         if (BrowserConnectionGateway._ensureConnectionReady(res, connection)) {
+            console.log(`Asked from status request`);
             const status = await connection.getStatus(isTestDone);
 
             respondWithJSON(res, status);

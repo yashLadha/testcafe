@@ -253,7 +253,7 @@ export default class BrowserConnection extends EventEmitter {
 
         const restartPromise = this._closeBrowser()
             .then(() => this._runBrowser());
-            return restartPromise;
+        return restartPromise;
     }
 
     private _restartBrowserOnDisconnect (err: Error): void {
