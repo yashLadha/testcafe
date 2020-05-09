@@ -205,7 +205,10 @@ export default class BrowserConnection extends EventEmitter {
         if (needPopNext || !this.pendingTestRunUrl)
             this.pendingTestRunUrl = await this._popNextTestRunUrl();
 
-        console.log(`Pending testrunUrl: ${this.pendingTestRunUrl}`);
+        if (this.pendingTestRunUrl === null && !this.isFirst)
+            console.log(`Need to close this connection`);
+
+        console.log(`Pending testrunUrl: ${this.pendingTestRunUrl} ${this.isFirst}`);
 
         return this.pendingTestRunUrl as string;
     }
@@ -226,7 +229,7 @@ export default class BrowserConnection extends EventEmitter {
             if (!this.isFirst && queueLength > 0 &&
                 queueLength % testSchedulingValue === 0) {
                 console.log('Restarting browser');
-            this.opened = false;
+                this.opened = false;
                 clearTimeout(this.heartbeatTimeout as NodeJS.Timeout);
                 // TODO: This is not marking the builds as passed and need to check
                 // if this can be done through an optional parameter and based on the status
@@ -235,9 +238,10 @@ export default class BrowserConnection extends EventEmitter {
             }
 
             this.isFirst = false;
-        } else {
-            this.close();
         }
+        // else {
+        //     this.close();
+        // }
         return this.hasQueuedJobs ? await this.currentJob.popNextTestRunUrl(this) : null;
     }
 
