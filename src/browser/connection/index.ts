@@ -223,7 +223,8 @@ export default class BrowserConnection extends EventEmitter {
             console.log(`Current jobController length: ${queueLength}`);
 
             // Spawn up a new browser on every new polling.
-            if (!this.isFirst && queueLength % testSchedulingValue === 0) {
+            if (!this.isFirst && queueLength > 0 &&
+                queueLength % testSchedulingValue === 0) {
                 console.log('Restarting browser');
                 clearTimeout(this.heartbeatTimeout as NodeJS.Timeout);
                 // TODO: This is not marking the builds as passed and need to check
