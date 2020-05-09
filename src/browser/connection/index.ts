@@ -226,6 +226,7 @@ export default class BrowserConnection extends EventEmitter {
             if (!this.isFirst && queueLength > 0 &&
                 queueLength % testSchedulingValue === 0) {
                 console.log('Restarting browser');
+            this.opened = false;
                 clearTimeout(this.heartbeatTimeout as NodeJS.Timeout);
                 // TODO: This is not marking the builds as passed and need to check
                 // if this can be done through an optional parameter and based on the status
@@ -253,9 +254,8 @@ export default class BrowserConnection extends EventEmitter {
         // let isTimeoutExpired                = false;
         // let timeout: NodeJS.Timeout | null  = null;
 
-        const restartPromise = this._closeBrowser()
-            .then(() => this._runBrowser());
-        return restartPromise;
+        return this._closeBrowser()
+        .then(() => this._runBrowser());
     }
 
     private _restartBrowserOnDisconnect (err: Error): void {
