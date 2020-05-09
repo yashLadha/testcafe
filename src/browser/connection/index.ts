@@ -233,10 +233,8 @@ export default class BrowserConnection extends EventEmitter {
             }
 
             this.isFirst = false;
-            return this.currentJob.queuedTestRuns > 0 ? await this.currentJob.popNextTestRunUrl(this) : null;
         }
-
-        return null;
+        return this.hasQueuedJobs ? await this.currentJob.popNextTestRunUrl(this) : null;
     }
 
     public static getById (id: string): BrowserConnection | null {
