@@ -234,6 +234,8 @@ export default class BrowserConnection extends EventEmitter {
             }
 
             this.isFirst = false;
+        } else {
+            this.close();
         }
         return this.hasQueuedJobs ? await this.currentJob.popNextTestRunUrl(this) : null;
     }
