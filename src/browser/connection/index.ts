@@ -189,6 +189,7 @@ export default class BrowserConnection extends EventEmitter {
 
     private _waitForHeartbeat (): void {
         this.heartbeatTimeout = setTimeout(() => {
+            console.log(`Heart beat lapsed trying to disconnect`);
             const err = this._createBrowserDisconnectedError();
 
             this.opened         = false;
@@ -221,11 +222,10 @@ export default class BrowserConnection extends EventEmitter {
             const queueLength = this.currentJob.queuedTestRuns;
             console.log(`Current jobController length: ${queueLength}`);
 
-            // Spawn up a new browser when it is multiple of 3. This
-            // 3 is basically will a parameter to look for when running a new test
-            // May be look for in a global pool
+            // Spawn up a new browser on every new polling.
             if (!this.isFirst && queueLength % testSchedulingValue === 0) {
                 console.log('Restarting browser');
+                clearTimeout(this.heartbeatTimeout as NodeJS.Timeout);
                 // TODO: This is not marking the builds as passed and need to check
                 // if this can be done through an optional parameter and based on the status
                 // of the tests in that session.
@@ -233,9 +233,10 @@ export default class BrowserConnection extends EventEmitter {
             }
 
             this.isFirst = false;
+            return this.currentJob.queuedTestRuns > 0 ? await this.currentJob.popNextTestRunUrl(this) : null;
         }
 
-        return this.hasQueuedJobs ? await this.currentJob.popNextTestRunUrl(this) : null;
+        return null;
     }
 
     public static getById (id: string): BrowserConnection | null {
@@ -247,32 +248,13 @@ export default class BrowserConnection extends EventEmitter {
 
         this._forceIdle();
 
-        let resolveTimeout: Function | null = null;
-        let isTimeoutExpired                = false;
-        let timeout: NodeJS.Timeout | null  = null;
+        // let resolveTimeout: Function | null = null;
+        // let isTimeoutExpired                = false;
+        // let timeout: NodeJS.Timeout | null  = null;
 
         const restartPromise = this._closeBrowser()
             .then(() => this._runBrowser());
-
-        const timeoutPromise = new Promise(resolve => {
-            resolveTimeout = resolve;
-
-            timeout = setTimeout(() => {
-                isTimeoutExpired = true;
-
-                resolve();
-            }, this.BROWSER_RESTART_TIMEOUT);
-        });
-
-        Promise.race([ restartPromise, timeoutPromise ])
-            .then(() => {
-                clearTimeout(timeout as NodeJS.Timeout);
-
-                if (isTimeoutExpired)
-                    this.emit('error', this._createBrowserDisconnectedError());
-                else
-                    (resolveTimeout as Function)();
-            });
+            return restartPromise;
     }
 
     private _restartBrowserOnDisconnect (err: Error): void {

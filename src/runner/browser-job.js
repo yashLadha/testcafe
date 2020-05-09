@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { pull as remove } from 'lodash';
 import AsyncEventEmitter from '../utils/async-event-emitter';
 import TestRunController from './test-run-controller';
@@ -121,6 +122,7 @@ export default class BrowserJob extends AsyncEventEmitter {
 
     async popNextTestRunUrl (connection) {
         while (this.testRunControllerQueue.length) {
+            console.log(`Popping the nextTestURL`);
             // NOTE: before hook for test run fixture is currently
             // executing, so test run is temporary blocked
             const testRunController         = this.testRunControllerQueue[0];
