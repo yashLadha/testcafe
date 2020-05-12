@@ -93,13 +93,13 @@ export default class BrowserJob extends AsyncEventEmitter {
 
     async _onTestRunDone (testRunController) {
         this.total++;
-        console.log(`Test run done is called ${this.total}`);
+        // console.log(`Test run done is called ${this.total}`);
 
         if (!testRunController.testRun.errs.length)
             this.passed++;
 
         while (this.completionQueue.length && this.completionQueue[0].done) {
-            console.log(`Completion queue`);
+            // console.log(`Completion queue`);
             testRunController = this.completionQueue.shift();
 
             await this.emit('test-run-done', testRunController.testRun);
@@ -108,7 +108,7 @@ export default class BrowserJob extends AsyncEventEmitter {
         }
 
         if (!this.completionQueue.length && !this.hasQueuedTestRuns) {
-            console.log(`Emitting done for test run`);
+            // console.log(`Emitting done for test run`);
             if (!this.opts.live)
                 SessionController.closeSession(testRunController.testRun);
 
@@ -129,7 +129,7 @@ export default class BrowserJob extends AsyncEventEmitter {
 
     get incrementOpening() {
         ++this.openingCount;
-        console.log(this.openingCount, this.totalGiven);
+        // console.log(this.openingCount, this.totalGiven);
     }
 
     get leftCount() {
@@ -172,7 +172,7 @@ export default class BrowserJob extends AsyncEventEmitter {
 
     async popNextTestRunUrl (connection) {
         while (this.testRunControllerQueue.length) {
-            console.log(`Popping the nextTestURL`);
+            // console.log(`Popping the nextTestURL`);
             // NOTE: before hook for test run fixture is currently
             // executing, so test run is temporary blocked
             const testRunController         = this.testRunControllerQueue[0];
@@ -198,7 +198,7 @@ export default class BrowserJob extends AsyncEventEmitter {
             if (testRunUrl)
                 return testRunUrl;
         }
-        console.log(`Sending null now...`);
+        // console.log(`Sending null now...`);
 
         return null;
     }

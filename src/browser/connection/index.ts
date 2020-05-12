@@ -259,7 +259,7 @@ export default class BrowserConnection extends EventEmitter {
 
         if (this.testScheduling && this.currentJob) {
             const queueLength = this.currentJob.queuedTestRuns;
-            console.log(`Current jobController length: ${queueLength}`);
+            // console.log(`Current jobController length: ${queueLength}`);
 
             // Spawn up a new browser on every new polling.
             if (!this.isFirst && this.hasQueuedJobs && queueLength > 0) {
@@ -284,7 +284,7 @@ export default class BrowserConnection extends EventEmitter {
             ? await this.currentJob.popNextTestRunUrl(this)
             : null;
 
-        console.log(`Is restarted: ${isRestartHappened} ${url}`);
+        // console.log(`Is restarted: ${isRestartHappened} ${url}`);
         if (this.testScheduling && url === null && isRestartHappened) {
             this.opened = false;
             this._closeBrowser();
@@ -481,7 +481,7 @@ export default class BrowserConnection extends EventEmitter {
         isTestDone: boolean
     ): Promise<BrowserConnectionStatus> {
         if (!this.idle && !isTestDone) {
-            console.log(`Status idle is set for the test run`);
+            // console.log(`Status idle is set for the test run`);
             this.idle = true;
             this.emit("idle");
         }

@@ -61,10 +61,10 @@ export default class Task extends AsyncEventEmitter {
             await this.emit('browser-job-done', job);
 
             remove(this.pendingBrowserJobs, job);
-            console.log(`
-                Jobs is asked to remove from queue
-                ${this.pendingBrowserJobs.length}
-            `);
+            // console.log(`
+            //     Jobs is asked to remove from queue
+            //     ${this.pendingBrowserJobs.length}
+            // `);
 
             if (!this.pendingBrowserJobs.length)
                 await this.emit('done');

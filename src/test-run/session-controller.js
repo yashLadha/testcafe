@@ -58,7 +58,7 @@ export default class SessionController extends Session {
 
         if (!sessionInfo || !testRun.disablePageReloads) {
             if (sessionInfo && sessionInfo.url) {
-                console.log(`Closing session because of ${testRun.disablePageReloads}`);
+                // console.log(`Closing session because of ${testRun.disablePageReloads}`);
                 SessionController.closeSession(testRun);
             }
 
