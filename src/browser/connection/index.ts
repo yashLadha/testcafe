@@ -238,6 +238,7 @@ export default class BrowserConnection extends EventEmitter {
         const isZero = this.currentJob
             ? this.currentJob.queuedTestRuns === 0
             : false;
+
         if (this.testScheduling && isZero) {
             const cJob = this.currentJob;
             let isDone = false;
@@ -262,10 +263,10 @@ export default class BrowserConnection extends EventEmitter {
 
             // Spawn up a new browser on every new polling.
             if (!this.isFirst && this.hasQueuedJobs && queueLength > 0) {
-                this.opened = false;
-                clearTimeout(this.heartbeatTimeout as NodeJS.Timeout);
                 const testRunController = await this.currentJob.popTest;
                 if (testRunController !== null) {
+                    this.opened = false;
+                    clearTimeout(this.heartbeatTimeout as NodeJS.Timeout);
                     await this._restartBrowser();
                     isRestartHappened = true;
                     return await this.currentJob.setTestURL(
