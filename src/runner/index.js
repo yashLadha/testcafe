@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { resolve as resolvePath, dirname } from 'path';
 import debug from 'debug';
 import promisifyEvent from 'promisify-event';
@@ -375,6 +376,14 @@ export default class Runner extends EventEmitter {
         this.bootstrapper.tsConfigPath         = this.configuration.getOption(OPTION_NAMES.tsConfigPath);
         this.bootstrapper.clientScripts        = this.configuration.getOption(OPTION_NAMES.clientScripts) || this.bootstrapper.clientScripts;
         this.bootstrapper.allowMultipleWindows = this.configuration.getOption(OPTION_NAMES.allowMultipleWindows);
+
+        this.bootstrapper.testScheduling = (this.configuration.getOption(OPTION_NAMES.testScheduling) || 'false').toString().toLowerCase() === 'true';
+    }
+
+    enableTestScheduling (testScheduling) {
+        this.configuration.mergeOptions({ testScheduling });
+
+        return this;
     }
 
     // API

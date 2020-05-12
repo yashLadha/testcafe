@@ -102,7 +102,8 @@ async function runTests (argParser) {
         .video(opts.video, opts.videoOptions, opts.videoEncodingOptions)
         .screenshots(opts.screenshots)
         .startApp(opts.app, opts.appInitDelay)
-        .clientScripts(argParser.opts.clientScripts);
+        .clientScripts(argParser.opts.clientScripts)
+        .enableTestScheduling(argParser.opts.testScheduling);
 
     try {
         const runOpts = argParser.getRunOptions();

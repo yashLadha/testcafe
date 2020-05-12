@@ -130,7 +130,7 @@ export default class BrowserConnectionGateway {
 
     private static async _onStatusRequestCore (req: IncomingMessage, res: ServerResponse, connection: BrowserConnection, isTestDone: boolean): Promise<void> {
         if (BrowserConnectionGateway._ensureConnectionReady(res, connection)) {
-            console.log(`Asked from status request`);
+            console.log(`Asked from status request isTestDone: ${isTestDone}`);
             const status = await connection.getStatus(isTestDone);
 
             respondWithJSON(res, status);

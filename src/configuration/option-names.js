@@ -40,5 +40,6 @@ export default {
     disableScreenshots:          'disableScreenshots',
     debugLogger:                 'debugLogger',
     allowMultipleWindows:        'allowMultipleWindows',
-    experimentalCompilerService: 'experimentalCompilerService'
+    experimentalCompilerService: 'experimentalCompilerService',
+    testScheduling:              'testScheduling',
 };

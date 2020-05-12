@@ -111,6 +111,7 @@ export default class CLIArgumentParser {
             .option('-a, --app <command>', 'launch the tested app using the specified command before running tests')
             .option('-c, --concurrency <number>', 'run tests concurrently')
             .option('-L, --live', 'enable live mode. In this mode, TestCafe watches for changes you make in the test files. These changes immediately restart the tests so that you can see the effect.')
+            .option('--test-scheduling', 'Enable tests scheduling at tests level')
             .option('--test-meta <key=value[,key2=value2,...]>', 'run only tests with matching metadata')
             .option('--fixture-meta <key=value[,key2=value2,...]>', 'run only fixtures with matching metadata')
             .option('--debug-on-fail', 'pause the test if it fails')

@@ -4,7 +4,7 @@
 // -------------------------------------------------------------
 
 export const HEARTBEAT_TIMEOUT       = 7 * 60 * 1000;
-export const BROWSER_RESTART_TIMEOUT = 70 * 1000;
+export const BROWSER_RESTART_TIMEOUT = 120 * 1000;
 
 export const HEARTBEAT_INTERVAL = 2 * 1000;
 
