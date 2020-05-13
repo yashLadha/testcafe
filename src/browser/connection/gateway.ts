@@ -38,7 +38,7 @@ export default class BrowserConnectionGateway {
             if (connection)
                 handler(req, res, connection);
             else {
-                console.log(`Sending 404 for this ${url}`);
+                // console.log(`Sending 404 for this ${url}`);
                 respond404(res);
             }
         });
