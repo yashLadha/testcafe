@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { pull as remove } from 'lodash';
 import AsyncEventEmitter from '../utils/async-event-emitter';
 import TestRunController from './test-run-controller';
@@ -21,8 +22,11 @@ export default class BrowserJob extends AsyncEventEmitter {
         this.warningLog            = warningLog;
         this.fixtureHookController = fixtureHookController;
         this.result                = null;
+        this.openingCount = 0;
 
         this.testRunControllerQueue = tests.map((test, index) => this._createTestRunController(test, index));
+
+        this.totalGiven = tests.length;
 
         this.completionQueue = [];
         this.reportsPending  = [];
@@ -82,17 +86,20 @@ export default class BrowserJob extends AsyncEventEmitter {
     }
 
     _onTestRunRestart (testRunController) {
+        console.log(`Test run restarted`);
         this._removeFromCompletionQueue(testRunController);
         this.testRunControllerQueue.unshift(testRunController);
     }
 
     async _onTestRunDone (testRunController) {
         this.total++;
+        // console.log(`Test run done is called ${this.total}`);
 
         if (!testRunController.testRun.errs.length)
             this.passed++;
 
         while (this.completionQueue.length && this.completionQueue[0].done) {
+            // console.log(`Completion queue`);
             testRunController = this.completionQueue.shift();
 
             await this.emit('test-run-done', testRunController.testRun);
@@ -101,6 +108,7 @@ export default class BrowserJob extends AsyncEventEmitter {
         }
 
         if (!this.completionQueue.length && !this.hasQueuedTestRuns) {
+            // console.log(`Emitting done for test run`);
             if (!this.opts.live)
                 SessionController.closeSession(testRunController.testRun);
 
@@ -115,8 +123,56 @@ export default class BrowserJob extends AsyncEventEmitter {
         return !!this.testRunControllerQueue.length;
     }
 
+    get queuedTestRuns () {
+        return this.testRunControllerQueue.length;
+    }
+
+    get incrementOpening() {
+        ++this.openingCount;
+        // console.log(this.openingCount, this.totalGiven);
+    }
+
+    get leftCount() {
+        return this.totalGiven - this.openingCount;
+    }
+
+    get popTest() {
+        while (this.testRunControllerQueue.length) {
+            // NOTE: before hook for test run fixture is currently
+            // executing, so test run is temporary blocked
+            const testRunController         = this.testRunControllerQueue[0];
+            const isBlocked                 = testRunController.blocked;
+            const isConcurrency             = this.opts.concurrency > 1;
+            const hasIncompleteTestRuns     = this.completionQueue.some(controller => !controller.done);
+            const needWaitLastTestInFixture = this.reportsPending.some(controller => controller.test.fixture !== testRunController.test.fixture);
+
+            if (isBlocked || (hasIncompleteTestRuns || needWaitLastTestInFixture) && !isConcurrency)
+                break;
+
+            this.testRunControllerQueue.shift();
+            return testRunController;
+        }
+        return null;
+    }
+
+    async setTestURL(testRunController, connection) {
+        this.reportsPending.push(testRunController);
+        this._addToCompletionQueue(testRunController);
+
+        if (!this.started) {
+            this.started = true;
+            await this.emit('start');
+        }
+
+        const testRunUrl = await testRunController.start(connection);
+
+        if (testRunUrl)
+            return testRunUrl;
+    }
+
     async popNextTestRunUrl (connection) {
         while (this.testRunControllerQueue.length) {
+            // console.log(`Popping the nextTestURL`);
             // NOTE: before hook for test run fixture is currently
             // executing, so test run is temporary blocked
             const testRunController         = this.testRunControllerQueue[0];
@@ -142,6 +198,7 @@ export default class BrowserJob extends AsyncEventEmitter {
             if (testRunUrl)
                 return testRunUrl;
         }
+        // console.log(`Sending null now...`);
 
         return null;
     }

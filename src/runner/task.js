@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { pull as remove, groupBy } from 'lodash';
 import moment from 'moment';
 import AsyncEventEmitter from '../utils/async-event-emitter';
@@ -60,6 +61,10 @@ export default class Task extends AsyncEventEmitter {
             await this.emit('browser-job-done', job);
 
             remove(this.pendingBrowserJobs, job);
+            // console.log(`
+            //     Jobs is asked to remove from queue
+            //     ${this.pendingBrowserJobs.length}
+            // `);
 
             if (!this.pendingBrowserJobs.length)
                 await this.emit('done');

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import path from 'path';
 import { Session } from 'testcafe-hammerhead';
 import { UNSTABLE_NETWORK_MODE_HEADER } from '../browser/connection/unstable-network-mode';
@@ -56,8 +57,10 @@ export default class SessionController extends Session {
         let sessionInfo = ACTIVE_SESSIONS_MAP[testRun.browserConnection.id];
 
         if (!sessionInfo || !testRun.disablePageReloads) {
-            if (sessionInfo && sessionInfo.url)
+            if (sessionInfo && sessionInfo.url) {
+                // console.log(`Closing session because of ${testRun.disablePageReloads}`);
                 SessionController.closeSession(testRun);
+            }
 
             let session = null;
 
