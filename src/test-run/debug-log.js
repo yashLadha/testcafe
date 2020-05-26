@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { inspect } from 'util';
 import debugLogger from 'debug';
 import indentString from 'indent-string';
@@ -8,7 +9,7 @@ export default class TestRunDebugLog {
         this.commandLogger       = debugLogger(`testcafe:test-run:${userAgent}:command`);
     }
 
-    static _addEntry (logger, data) {
+    static _addEntry (logger, data, options = {}) {
         try {
             const entry = data ?
                 indentString(`\n${inspect(data, { compact: false })}\n`, ' ', 4) :
@@ -25,7 +26,7 @@ export default class TestRunDebugLog {
         TestRunDebugLog._addEntry(this.driverMessageLogger, msg);
     }
 
-    command (cmd) {
-        TestRunDebugLog._addEntry(this.commandLogger, cmd);
+    command (cmd, options = {}) {
+        TestRunDebugLog._addEntry(this.commandLogger, cmd, options);
     }
 }

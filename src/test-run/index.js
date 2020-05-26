@@ -677,7 +677,9 @@ export default class TestRun extends AsyncEventEmitter {
     }
 
     async executeCommand (command, callsite) {
-        this.debugLog.command(command);
+        this.debugLog.command(command, {
+            id: this.browserConnection.id
+        });
 
         if (this.pendingPageError && isCommandRejectableByPageError(command))
             return this._rejectCommandWithPageError(callsite);
