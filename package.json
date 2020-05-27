@@ -1,19 +1,16 @@
 {
-  "name": "testcafe",
+  "name": "@browserstack/testcafe",
   "description": "Automated browser testing for the modern web development stack.",
   "license": "MIT",
-  "version": "1.8.5-alpha.2",
-  "author": {
-    "name": "Developer Express Inc.",
-    "url": "https://www.devexpress.com/"
-  },
+  "version": "1.8.5",
+  "author": "BrowserStack",
   "bugs": {
-    "url": "https://github.com/DevExpress/testcafe/issues"
+    "url": "https://github.com/browserstack/testcafe/issues"
   },
-  "homepage": "https://devexpress.github.io/testcafe/",
+  "homepage": "https://github.com/browserstack/testcafe",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DevExpress/testcafe.git"
+    "url": "git+https://github.com/browserstack/testcafe.git"
   },
   "engines": {
     "node": ">=8.0.0"
@@ -49,9 +46,7 @@
     "await"
   ],
   "scripts": {
-    "prepare": "gulp fast-build",
-    "publish-please": "del-cli package-lock.json node_modules && npm i && publish-please",
-    "prepublishOnly": "publish-please guard"
+    "prepare": "gulp fast-build"
   },
   "dependencies": {
     "@types/node": "^10.12.19",
