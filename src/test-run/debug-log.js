@@ -9,7 +9,7 @@ export default class TestRunDebugLog {
         this.commandLogger       = debugLogger(`testcafe:test-run:${userAgent}:command`);
     }
 
-    static _addEntry (logger, data, options = {}) {
+    static async _addEntry (logger, data, options = {}) {
         try {
             const entry = data ?
                 indentString(`\n${inspect(data, { compact: false })}\n`, ' ', 4) :
@@ -26,7 +26,7 @@ export default class TestRunDebugLog {
         TestRunDebugLog._addEntry(this.driverMessageLogger, msg);
     }
 
-    command (cmd, options = {}) {
-        TestRunDebugLog._addEntry(this.commandLogger, cmd, options);
+    async command (cmd, options = {}) {
+        await TestRunDebugLog._addEntry(this.commandLogger, cmd, options);
     }
 }
