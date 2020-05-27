@@ -677,7 +677,7 @@ export default class TestRun extends AsyncEventEmitter {
     }
 
     async executeCommand (command, callsite) {
-        this.debugLog.command(command, {
+        await this.debugLog.command(command, {
             id: this.browserConnection.id
         });
 
