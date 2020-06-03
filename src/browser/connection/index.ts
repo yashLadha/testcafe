@@ -67,7 +67,6 @@ export default class BrowserConnection extends EventEmitter {
     private readonly statusUrl: string;
     private readonly activeWindowIdUrl: string;
     private statusDoneUrl: string;
-    private switchingToIdle: boolean;
     private isFirst: boolean;
     private testScheduling: boolean;
 
@@ -246,7 +245,7 @@ export default class BrowserConnection extends EventEmitter {
                 const testRunController = await this.currentJob.popTest;
 
                 if (testRunController !== null) {
-                    this.opened = false;
+                    this.status = BrowserConnectionStatus.disconnected;
                     clearTimeout(this.heartbeatTimeout as NodeJS.Timeout);
                     await this._restartBrowser();
                     isRestartHappened = true;
@@ -267,7 +266,7 @@ export default class BrowserConnection extends EventEmitter {
 
         // console.log(`Is restarted: ${isRestartHappened} ${url}`);
         if (this.testScheduling && url === null && isRestartHappened) {
-            this.opened = false;
+            this.status = BrowserConnectionStatus.disconnected;
             this._closeBrowser();
         }
 
