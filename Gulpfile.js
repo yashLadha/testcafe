@@ -166,6 +166,8 @@ const TESTS_GLOB = [
     `!${COMPILER_SERVICE_TESTS_GLOB}`
 ];
 
+const RETRY_TEST_RUN_COUNT = 3;
+
 let websiteServer = null;
 
 function promisifyStream (stream) {
@@ -622,15 +624,6 @@ gulp.step('put-in-website-content', gulp.parallel('put-in-articles', 'put-in-nav
 
 gulp.step('prepare-website-content', gulp.series('clean-website', 'fetch-assets-repo', 'put-in-website-content'));
 
-gulp.step('put-in-templates', () => {
-    return gulp
-        .src('docs/articles/templates/**/*')
-        .pipe(gulp.dest('site/src/_includes'));
-});
-
-gulp.step('put-in-website-content', gulp.parallel('put-in-articles', 'put-in-navigation', 'put-in-posts', 'put-in-publications', 'put-in-tweets', 'put-in-templates'));
-gulp.step('prepare-website-content', gulp.series('clean-website', 'fetch-assets-repo', 'put-in-website-content'));
-
 gulp.step('prepare-website', gulp.parallel('lint-docs', 'prepare-website-content'));
 
 function buildWebsite (mode, cb) {
@@ -764,13 +757,20 @@ function testFunctional (src, testingEnvironmentName, { allowMultipleWindows, ex
 
     tests.unshift(SETUP_TESTS_GLOB);
 
+    const opts = {
+        reporter: 'mocha-reporter-spec-with-retries',
+        timeout:  typeof v8debug === 'undefined' ? 3 * 60 * 1000 : Infinity // NOTE: disable timeouts in debug
+    };
+
+    if (process.env.RETRY_FAILED_TESTS === 'true') {
+        opts.retries = RETRY_TEST_RUN_COUNT;
+
+        console.log('!!!Retry filed tests'); //eslint-disable-line no-console
+    }
+
     return gulp
         .src(tests)
-        .pipe(mocha({
-            ui:       'bdd',
-            reporter: 'spec',
-            timeout:  typeof v8debug === 'undefined' ? 3 * 60 * 1000 : Infinity // NOTE: disable timeouts in debug
-        }));
+        .pipe(mocha(opts));
 }
 
 gulp.step('test-functional-travis-desktop-osx-and-ms-edge-run', () => {
