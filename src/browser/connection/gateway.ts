@@ -66,7 +66,7 @@ export default class BrowserConnectionGateway {
 
     // Helpers
     private static _ensureConnectionReady (res: ServerResponse, connection: BrowserConnection): boolean {
-        if (!connection.ready) {
+        if (!connection.isReady()) {
             respond500(res, 'The connection is not ready yet.');
             return false;
         }
@@ -88,7 +88,7 @@ export default class BrowserConnectionGateway {
 
     // Route handlers
     private static _onConnection (req: IncomingMessage, res: ServerResponse, connection: BrowserConnection): void {
-        if (connection.ready)
+        if (connection.isReady())
             respond500(res, 'The connection is already established.');
 
         else {

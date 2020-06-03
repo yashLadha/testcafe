@@ -1,46 +1,36 @@
-/* eslint-disable */
-import { EventEmitter } from "events";
-import Mustache from "mustache";
-import { pull as remove } from "lodash";
-import parseUserAgent from "../../utils/parse-user-agent";
-import { readSync as read } from "read-file-relative";
-import promisifyEvent from "promisify-event";
-import nanoid from "nanoid";
-import COMMAND from "./command";
-import STATUS from "./status";
-import { GeneralError } from "../../errors/runtime";
-import { RUNTIME_ERRORS } from "../../errors/types";
-import {
-    HEARTBEAT_TIMEOUT,
-    BROWSER_RESTART_TIMEOUT
-} from "../../utils/browser-connection-timeouts";
-import { Dictionary } from "../../configuration/interfaces";
-import BrowserConnectionGateway from "./gateway";
-import { inspect } from "util";
+import { EventEmitter } from 'events';
+import Mustache from 'mustache';
+import { pull as remove } from 'lodash';
+import parseUserAgent from '../../utils/parse-user-agent';
+import { readSync as read } from 'read-file-relative';
+import promisifyEvent from 'promisify-event';
+import nanoid from 'nanoid';
+import COMMAND from './command';
+import BrowserConnectionStatus from './status';
+import HeartbeatStatus from './heartbeat-status';
+import { GeneralError } from '../../errors/runtime';
+import { RUNTIME_ERRORS } from '../../errors/types';
+import { BROWSER_RESTART_TIMEOUT, HEARTBEAT_TIMEOUT } from '../../utils/browser-connection-timeouts';
+import { Dictionary } from '../../configuration/interfaces';
+import BrowserConnectionGateway from './gateway';
 
-const IDLE_PAGE_TEMPLATE = read(
-    "../../client/browser/idle-page/index.html.mustache"
-);
+import { inspect } from 'util';
+
+const IDLE_PAGE_TEMPLATE                         = read('../../client/browser/idle-page/index.html.mustache');
 const connections: Dictionary<BrowserConnection> = {};
-// Test concurrency parameter taken from the shell. This is
-// required to split up the tests into multiple browsers
-const TEST_CONCURRENCY = process.env.TEST_CONCURRENCY || "1";
-// This is the value that will be used to basically split up the test
-// after which index
-const testSchedulingValue = parseInt(TEST_CONCURRENCY, 10);
 
 interface DisconnectionPromise<T> extends Promise<T> {
     resolve: Function;
     reject: Function;
 }
 
-interface BrowserConnectionStatus {
+interface BrowserConnectionStatusResult {
     cmd: string;
     url: string;
 }
 
-interface HeartbeatStatus {
-    code: string;
+interface HeartbeatStatusResult {
+    code: HeartbeatStatus;
     url: string;
 }
 
@@ -53,7 +43,7 @@ interface InitScriptTask extends InitScript {
 }
 
 export default class BrowserConnection extends EventEmitter {
-    private permanent: boolean;
+    public permanent: boolean;
     private readonly allowMultipleWindows: boolean;
     private readonly HEARTBEAT_TIMEOUT: number;
     private readonly BROWSER_RESTART_TIMEOUT: number;
@@ -63,10 +53,7 @@ export default class BrowserConnection extends EventEmitter {
     private browserConnectionGateway: BrowserConnectionGateway;
     private disconnectionPromise: DisconnectionPromise<void> | null;
     private testRunAborted: boolean;
-    private closing: boolean;
-    private closed: boolean;
-    public ready: boolean;
-    private opened: boolean;
+    public status: BrowserConnectionStatus;
     private heartbeatTimeout: NodeJS.Timeout | null;
     private pendingTestRunUrl: string | null;
     public readonly url: string;
@@ -89,7 +76,7 @@ export default class BrowserConnection extends EventEmitter {
     public browserInfo: any;
     public provider: any;
 
-    public constructor(
+    public constructor (
         gateway: BrowserConnectionGateway,
         browserInfo: any,
         permanent: boolean,
@@ -110,19 +97,15 @@ export default class BrowserConnection extends EventEmitter {
         this.isFirst = true;
 
         this.browserInfo = browserInfo;
-        this.browserInfo.userAgentProviderMetaInfo = "";
+        this.browserInfo.userAgentProviderMetaInfo = '';
 
         this.provider = browserInfo.provider;
 
-        this.permanent = permanent;
-        this.closing = false;
-        this.closed = false;
-        this.ready = false;
-        this.opened = false;
-        this.idle = true;
-        this.switchingToIdle = false;
-        this.heartbeatTimeout = null;
-        this.pendingTestRunUrl = null;
+        this.permanent            = permanent;
+        this.status               = BrowserConnectionStatus.uninitialized;
+        this.idle                 = true;
+        this.heartbeatTimeout     = null;
+        this.pendingTestRunUrl    = null;
         this.allowMultipleWindows = allowMultipleWindows;
         this.testScheduling = testScheduling;
 
@@ -140,7 +123,7 @@ export default class BrowserConnection extends EventEmitter {
         this.statusUrl = `${gateway.domain}${this.statusRelativeUrl}`;
         this.statusDoneUrl = `${gateway.domain}${this.statusDoneRelativeUrl}`;
 
-        this.on("error", () => {
+        this.on('error', () => {
             this._forceIdle();
             this.close();
         });
@@ -152,11 +135,11 @@ export default class BrowserConnection extends EventEmitter {
         process.nextTick(() => this._runBrowser());
     }
 
-    private static _generateId(): string {
+    private static _generateId (): string {
         return nanoid(7);
     }
 
-    private async _runBrowser(): Promise<void> {
+    private async _runBrowser (): Promise<void> {
         try {
             await this.provider.openBrowser(
                 this.id,
@@ -165,76 +148,72 @@ export default class BrowserConnection extends EventEmitter {
                 this.allowMultipleWindows
             );
 
-            if (!this.ready) await promisifyEvent(this, "ready");
+            if (this.status !== BrowserConnectionStatus.ready)
+                await promisifyEvent(this, 'ready');
 
-            this.opened = true;
-            this.emit("opened");
-        } catch (err) {
-            this.emit(
-                "error",
-                new GeneralError(
-                    RUNTIME_ERRORS.unableToOpenBrowser,
-                    this.browserInfo.providerName +
-                        ":" +
-                        this.browserInfo.browserName,
-                    err.stack
-                )
-            );
+            this.status = BrowserConnectionStatus.opened;
+            this.emit('opened');
+        }
+        catch (err) {
+            this.emit('error', new GeneralError(
+                RUNTIME_ERRORS.unableToOpenBrowser,
+                this.browserInfo.providerName + ':' + this.browserInfo.browserName,
+                err.stack
+            ));
         }
     }
 
-    private async _closeBrowser(): Promise<void> {
-        if (!this.idle) await promisifyEvent(this, "idle");
+    private async _closeBrowser (): Promise<void> {
+        if (!this.idle) await promisifyEvent(this, 'idle');
 
         try {
             await this.provider.closeBrowser(this.id);
-        } catch (err) {
+        }
+        catch (err) {
             // NOTE: A warning would be really nice here, but it can't be done while log is stored in a task.
-            console.log(
-                `Error captured while closing the browser: ${inspect(err, {
-                    depth: 1
-                })}`
-            );
+            // eslint-disable-next-line no-console
+            console.log(`Error captured while closing the browser: ${inspect(err, { depth: 0 })}`);
         }
     }
 
-    private _forceIdle(): void {
+    private _forceIdle (): void {
         if (!this.idle) {
-            this.switchingToIdle = false;
             this.idle = true;
-            this.emit("idle");
+
+            this.emit('idle');
         }
     }
 
-    private _createBrowserDisconnectedError(): GeneralError {
+    private _createBrowserDisconnectedError (): GeneralError {
         return new GeneralError(
             RUNTIME_ERRORS.browserDisconnected,
             this.userAgent
         );
     }
 
-    private _waitForHeartbeat(): void {
+    private _waitForHeartbeat (): void {
         this.heartbeatTimeout = setTimeout(() => {
+            // eslint-disable-next-line no-console
             console.log(`Heart beat lapsed trying to disconnect`);
             const err = this._createBrowserDisconnectedError();
 
-            this.opened = false;
+            this.status         = BrowserConnectionStatus.disconnected;
             this.testRunAborted = true;
 
-            this.emit("disconnected", err);
+            this.emit('disconnected', err);
 
             this._restartBrowserOnDisconnect(err);
         }, this.HEARTBEAT_TIMEOUT);
     }
 
-    private async _getTestRunUrl(needPopNext: boolean): Promise<string> {
+    private async _getTestRunUrl (needPopNext: boolean): Promise<string> {
         if (needPopNext || !this.pendingTestRunUrl)
             this.pendingTestRunUrl = await this._popNextTestRunUrl();
 
         return this.pendingTestRunUrl as string;
     }
 
-    private async _popNextTestRunUrl(): Promise<string | null> {
+    private async _popNextTestRunUrl (): Promise<string | null> {
         const isZero = this.currentJob
             ? this.currentJob.queuedTestRuns === 0
             : false;
@@ -242,11 +221,12 @@ export default class BrowserConnection extends EventEmitter {
         if (this.testScheduling && isZero) {
             const cJob = this.currentJob;
             let isDone = false;
+
             setInterval(() => {
                 if (!isDone && cJob.total === cJob.totalGiven) {
                     isDone = true;
                     this.close();
-                    cJob.emit("done");
+                    cJob.emit('done');
                 }
             }, 1000);
             return null;
@@ -264,6 +244,7 @@ export default class BrowserConnection extends EventEmitter {
             // Spawn up a new browser on every new polling.
             if (!this.isFirst && this.hasQueuedJobs && queueLength > 0) {
                 const testRunController = await this.currentJob.popTest;
+
                 if (testRunController !== null) {
                     this.opened = false;
                     clearTimeout(this.heartbeatTimeout as NodeJS.Timeout);
@@ -293,12 +274,12 @@ export default class BrowserConnection extends EventEmitter {
         return url;
     }
 
-    public static getById(id: string): BrowserConnection | null {
+    public static getById (id: string): BrowserConnection | null {
         return connections[id] || null;
     }
 
-    private async _restartBrowser(): Promise<void> {
-        this.ready = false;
+    private async _restartBrowser (): Promise<void> {
+        this.status = BrowserConnectionStatus.uninitialized;
 
         this._forceIdle();
 
@@ -324,12 +305,12 @@ export default class BrowserConnection extends EventEmitter {
             clearTimeout(timeout as NodeJS.Timeout);
 
             if (isTimeoutExpired)
-                this.emit("error", this._createBrowserDisconnectedError());
+                this.emit('error', this._createBrowserDisconnectedError());
             else (resolveTimeout as Function)();
         });
     }
 
-    private _restartBrowserOnDisconnect(err: Error): void {
+    private _restartBrowserOnDisconnect (err: Error): void {
         let resolveFn: Function | null = null;
         let rejectFn: Function | null = null;
 
@@ -348,14 +329,14 @@ export default class BrowserConnection extends EventEmitter {
                 return this._restartBrowser();
             })
             .catch(e => {
-                this.emit("error", e);
+                this.emit('error', e);
             }) as DisconnectionPromise<void>;
 
         this.disconnectionPromise.resolve = (resolveFn as unknown) as Function;
         this.disconnectionPromise.reject = (rejectFn as unknown) as Function;
     }
 
-    public async processDisconnection(
+    public async processDisconnection (
         disconnectionThresholdExceedeed: boolean
     ): Promise<void> {
         const { resolve, reject } = this
@@ -365,15 +346,15 @@ export default class BrowserConnection extends EventEmitter {
         else resolve();
     }
 
-    public addWarning(...args: any[]): void {
+    public addWarning (...args: any[]): void {
         if (this.currentJob) this.currentJob.warningLog.addWarning(...args);
     }
 
-    public setProviderMetaInfo(str: string): void {
+    public setProviderMetaInfo (str: string): void {
         this.browserInfo.userAgentProviderMetaInfo = str;
     }
 
-    public get userAgent(): string {
+    public get userAgent (): string {
         let userAgent = this.browserInfo.parsedUserAgent.prettyUserAgent;
 
         if (this.browserInfo.userAgentProviderMetaInfo)
@@ -382,16 +363,16 @@ export default class BrowserConnection extends EventEmitter {
         return userAgent;
     }
 
-    public get hasQueuedJobs(): boolean {
+    public get hasQueuedJobs (): boolean {
         return !!this.jobQueue.length;
     }
 
-    public get currentJob(): any {
+    public get currentJob (): any {
         return this.jobQueue[0];
     }
 
     // API
-    public runInitScript(code: string): Promise<string | unknown> {
+    public runInitScript (code: string): Promise<string | unknown> {
         return new Promise(resolve =>
             this.initScriptsQueue.push({ code, resolve })
         );
@@ -403,18 +384,19 @@ export default class BrowserConnection extends EventEmitter {
      *
      * @returns {undefined}
      */
-    public addJob(job: any): void {
+    public addJob (job: any): void {
         this.jobQueue.push(job);
     }
 
-    public removeJob(job: any): void {
+    public removeJob (job: any): void {
         remove(this.jobQueue, job);
     }
 
-    public close(): void {
-        if (this.closed || this.closing) return;
+    public close (): void {
+        if (this.status === BrowserConnectionStatus.closing || this.status === BrowserConnectionStatus.closed)
+            return;
 
-        this.closing = true;
+        this.status = BrowserConnectionStatus.closing;
 
         this._closeBrowser().then(() => {
             this.browserConnectionGateway.stopServingConnection(this);
@@ -422,79 +404,75 @@ export default class BrowserConnection extends EventEmitter {
 
             delete connections[this.id];
 
-            this.ready = false;
-            this.closed = true;
+            this.status = BrowserConnectionStatus.closed;
 
-            this.emit("closed");
+            this.emit('closed');
         });
     }
 
-    public establish(userAgent: string): void {
-        this.ready = true;
+    public establish (userAgent: string): void {
+        this.status                      = BrowserConnectionStatus.ready;
         this.browserInfo.parsedUserAgent = parseUserAgent(userAgent);
 
         this._waitForHeartbeat();
-        this.emit("ready");
+        this.emit('ready');
     }
 
-    public heartbeat(): HeartbeatStatus {
+    public heartbeat (): HeartbeatStatusResult {
         clearTimeout(this.heartbeatTimeout as NodeJS.Timeout);
         this._waitForHeartbeat();
 
         return {
-            code: this.closing ? STATUS.closing : STATUS.ok,
-            url: this.closing ? this.idleUrl : ""
+            code: this.status === BrowserConnectionStatus.closing ? HeartbeatStatus.closing : HeartbeatStatus.ok,
+            url:  this.status === BrowserConnectionStatus.closing ? this.idleUrl : ''
         };
     }
 
-    public renderIdlePage(): string {
+    public renderIdlePage (): string {
         return Mustache.render(IDLE_PAGE_TEMPLATE as string, {
-            userAgent: this.userAgent,
-            statusUrl: this.statusUrl,
-            heartbeatUrl: this.heartbeatUrl,
-            initScriptUrl: this.initScriptUrl,
+            userAgent:      this.userAgent,
+            statusUrl:      this.statusUrl,
+            heartbeatUrl:   this.heartbeatUrl,
+            initScriptUrl:  this.initScriptUrl,
             retryTestPages: !!this.browserConnectionGateway.retryTestPages
         });
     }
 
-    public getInitScript(): InitScript {
+    public getInitScript (): InitScript {
         const initScriptPromise = this.initScriptsQueue[0];
 
         return { code: initScriptPromise ? initScriptPromise.code : null };
     }
 
-    public handleInitScriptResult(data: string): void {
+    public handleInitScriptResult (data: string): void {
         const initScriptPromise = this.initScriptsQueue.shift();
 
         if (initScriptPromise) initScriptPromise.resolve(JSON.parse(data));
     }
 
-    public isHeadlessBrowser(): boolean {
+    public isHeadlessBrowser (): boolean {
         return this.provider.isHeadlessBrowser(this.id);
     }
 
-    public async reportJobResult(status: string, data: any): Promise<any> {
+    public async reportJobResult (status: string, data: any): Promise<any> {
         await this.provider.reportJobResult(this.id, status, data);
     }
 
-    public async getStatus(
-        isTestDone: boolean
-    ): Promise<BrowserConnectionStatus> {
+    public async getStatus (isTestDone: boolean): Promise<BrowserConnectionStatusResult> {
         if (!this.idle && !isTestDone) {
             // console.log(`Status idle is set for the test run`);
             this.idle = true;
-            this.emit("idle");
+            this.emit('idle');
         }
 
-        if (this.opened) {
-            const testRunUrl = await this._getTestRunUrl(
-                isTestDone || this.testRunAborted
-            );
+        if (this.status === BrowserConnectionStatus.opened) {
+            const testRunUrl = await this._getTestRunUrl(isTestDone || this.testRunAborted);
 
             this.testRunAborted = false;
 
             if (testRunUrl) {
                 this.idle = false;
+
                 return { cmd: COMMAND.run, url: testRunUrl };
             }
         }
@@ -502,11 +480,21 @@ export default class BrowserConnection extends EventEmitter {
         return { cmd: COMMAND.idle, url: this.idleUrl };
     }
 
-    public get activeWindowId(): null | string {
+    public get activeWindowId (): null | string {
         return this.provider.getActiveWindowId(this.id);
     }
 
-    public set activeWindowId(val) {
+    public set activeWindowId (val) {
         this.provider.setActiveWindowId(this.id, val);
+    }
+
+    public async canUseDefaultWindowActions (): Promise<boolean> {
+        return this.provider.canUseDefaultWindowActions(this.id);
+    }
+
+    public isReady (): boolean {
+        return this.status === BrowserConnectionStatus.ready ||
+            this.status === BrowserConnectionStatus.opened ||
+            this.status === BrowserConnectionStatus.closing;
     }
 }
