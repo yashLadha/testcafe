@@ -2,7 +2,7 @@
   "name": "@browserstack/testcafe",
   "description": "Automated browser testing for the modern web development stack.",
   "license": "MIT",
-  "version": "1.8.5",
+  "version": "1.8.6",
   "author": "BrowserStack",
   "bugs": {
     "url": "https://github.com/browserstack/testcafe/issues"
