@@ -81,7 +81,7 @@ tests which decreases test execution time.
 
 **Test Level Scheduing**<br/>
 Our fork supports the scheduling of tests at the `test function` level. This gives ability
-to view each test function in a separate TestCafe session on BrowserStack.
+to view each test function in a separate TestCafe session on BrowserStack. This method of scheduling, also sets the session name with the name of the function being executed. This allows faster discoverability on the automate dashboard.
 
 **Naming of Steps**<br/>
 Better debugability around the steps that are being executed in the test script on the dashboard.
