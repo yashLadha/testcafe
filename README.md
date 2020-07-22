@@ -79,6 +79,13 @@ However, you can disable this.
 TestCafe can open multiple instances of the same browser to run parallel
 tests which decreases test execution time.
 
+**Test Level Scheduing**<br/>
+Our fork supports the scheduling of tests at the `test function` level. This gives ability
+to view each test function in a separate TestCafe session on BrowserStack.
+
+**Naming of Steps**<br/>
+Better debugability around the steps that are being executed in the test script on the dashboard.
+
 **PageObject pattern support**<br/>
 The TestCafe's [Test API](https://devexpress.github.io/testcafe/documentation/test-api/)
 includes a high-level selector library, assertions, etc.
