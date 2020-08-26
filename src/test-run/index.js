@@ -330,6 +330,7 @@ export default class TestRun extends AsyncEventEmitter {
     }
 
     async start () {
+        console.log(`Test run started with ${this.session.id} in test-run`);
         testRunTracker.activeTestRuns[this.session.id] = this;
 
         await this.emit('start');
@@ -338,12 +339,18 @@ export default class TestRun extends AsyncEventEmitter {
 
         this.browserConnection.once('disconnected', onDisconnected);
 
+        console.log(`Browser connection waiting for connected: ${this.session.id}`);
         await this.once('connected');
+        console.log(`Browser connection connected: ${this.session.id}`);
 
+        console.log(`Browser connection waiting for being ready: ${this.session.id}`);
         await this.emit('ready');
+        console.log(`Browser connection is ready: ${this.session.id}`);
 
         if (await this._runBeforeHook()) {
+            console.log(`Browser connection is executing test fn: ${this.session.id}`);
             await this._executeTestFn(PHASE.inTest, this.test.fn);
+            console.log(`Browser connection has executed test fn: ${this.session.id}`);
             await this._runAfterHook();
         }
 

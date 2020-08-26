@@ -9,6 +9,8 @@ export default class BrowserJob extends AsyncEventEmitter {
     constructor (tests, browserConnections, proxy, screenshots, warningLog, fixtureHookController, opts) {
         super();
 
+        console.log(`Browser connection established`);
+
         this.started = false;
 
         this.total                 = 0;

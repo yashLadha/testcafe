@@ -180,6 +180,7 @@ export default class Reporter {
         });
 
         task.on('test-run-start', async testRun => {
+            console.log(`Test run is starting`);
             const reportItem = this._getReportItemForTestRun(testRun);
 
             reportItem.testRunIds.push(testRun.id);
@@ -203,6 +204,7 @@ export default class Reporter {
         });
 
         task.on('test-run-done', async testRun => {
+            console.log(`Test run is done`);
             const reportItem                    = this._getReportItemForTestRun(testRun);
             const isTestRunStoppedTaskExecution = !!testRun.errs.length && this.stopOnFirstFail;
 
@@ -218,6 +220,7 @@ export default class Reporter {
         });
 
         task.on('test-action-start', async ({ apiActionName, ...args }) => {
+            console.log(`Action started: ${apiActionName}`);
             if (this.plugin.reportTestActionStart) {
                 args = this._prepareReportTestActionEventArgs(args);
 
@@ -226,6 +229,7 @@ export default class Reporter {
         });
 
         task.on('test-action-done', async ({ apiActionName, ...args }) => {
+            console.log(`Action done: ${apiActionName}`);
             if (this.plugin.reportTestActionDone) {
                 args = this._prepareReportTestActionEventArgs(args);
 
