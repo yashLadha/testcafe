@@ -333,7 +333,9 @@ export default class TestRun extends AsyncEventEmitter {
         console.log(`Test run started with ${this.session.id} in test-run`);
         testRunTracker.activeTestRuns[this.session.id] = this;
 
+        console.log(`Starting the test session: ${this.session.id}`);
         await this.emit('start');
+        console.log(`Test run started completed: ${this.session.id}`);
 
         const onDisconnected = err => this._disconnect(err);
 
