@@ -54,6 +54,7 @@ export default class SessionController extends Session {
     }
     // API
     static getSession (testRun) {
+        console.log(`Fetching session with connection id: ${testRun.browserConnection.id}`);
         let sessionInfo = ACTIVE_SESSIONS_MAP[testRun.browserConnection.id];
 
         if (!sessionInfo || !testRun.disablePageReloads) {

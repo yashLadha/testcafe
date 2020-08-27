@@ -140,6 +140,7 @@ export default class BrowserConnection extends EventEmitter {
 
     private async _runBrowser (): Promise<void> {
         try {
+            console.log(`Broswer run started with url: ${this.url} for ${this.id}`);
             await this.provider.openBrowser(
                 this.id,
                 this.url,
@@ -418,6 +419,7 @@ export default class BrowserConnection extends EventEmitter {
     }
 
     public heartbeat (): HeartbeatStatusResult {
+        console.log(`Heartbeat request came ${this.id}`);
         clearTimeout(this.heartbeatTimeout as NodeJS.Timeout);
         this._waitForHeartbeat();
 

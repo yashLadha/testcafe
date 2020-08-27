@@ -45,6 +45,7 @@ export default class BrowserJob extends AsyncEventEmitter {
         });
         testRunController.on('test-run-start', async () => {
             await this.emit('test-run-start', testRunController.testRun);
+            console.log(`Test run started in the job for id: ${testRunController.testRun.id}`);
         });
         testRunController.on('test-run-ready', async () => {
             await this.emit('test-run-ready', testRunController);
@@ -86,7 +87,7 @@ export default class BrowserJob extends AsyncEventEmitter {
     }
 
     _onTestRunRestart (testRunController) {
-        console.log(`Test run restarted`);
+        console.log(`Test run restarted ${testRunController.testRun.id}`);
         this._removeFromCompletionQueue(testRunController);
         this.testRunControllerQueue.unshift(testRunController);
     }

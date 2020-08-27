@@ -142,6 +142,7 @@ export default class VideoRecorder extends EventEmitter {
     }
 
     async _onTestRunReady ({ index }) {
+        console.log(`Test run ready is called for ${index}`);
         const testRunRecorder = this.testRunVideoRecorders[index];
 
         if (!testRunRecorder)
