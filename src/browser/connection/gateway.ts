@@ -85,6 +85,7 @@ export default class BrowserConnectionGateway {
 
     // Route handlers
     private static _onConnection (req: IncomingMessage, res: ServerResponse, connection: BrowserConnection): void {
+        console.log(new Date() +`Connection is trying to establish connect is called ${connection.id}`);
         if (connection.isReady())
             respond500(res, 'The connection is already established.');
 
@@ -118,6 +119,7 @@ export default class BrowserConnectionGateway {
     }
 
     private static async _onStatusRequest (req: IncomingMessage, res: ServerResponse, connection: BrowserConnection): Promise<void> {
+        console.log(new Date() +`onStatus request for the connection: ${connection.id} is called`);
         return BrowserConnectionGateway._onStatusRequestCore(req, res, connection, false);
     }
 
@@ -134,6 +136,7 @@ export default class BrowserConnectionGateway {
     }
 
     private static _onInitScriptRequest (req: IncomingMessage, res: ServerResponse, connection: BrowserConnection): void {
+        console.log(new Date()+`onInitScript request for the connection ${connection.id} is called`);
         if (BrowserConnectionGateway._ensureConnectionReady(res, connection)) {
             const script = connection.getInitScript();
 
@@ -172,10 +175,13 @@ export default class BrowserConnectionGateway {
     }
 
     private async _connectNextRemoteBrowser (req: IncomingMessage, res: ServerResponse): Promise<void> {
+        console.log(new Date() +`Next remote browser connection is requested`);
         preventCaching(res);
 
         const remoteConnection = await this._remotesQueue.shift();
-
+        if (remoteConnection !== null) {
+            console.log(new Date() +`next browser connection to connect: ${remoteConnection.id}`);
+        }
         if (remoteConnection)
             redirect(res, remoteConnection.url);
         else

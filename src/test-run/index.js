@@ -340,6 +340,7 @@ export default class TestRun extends AsyncEventEmitter {
     }
 
     async start () {
+        console.log(new Date()+`Test run started with ${this.session.id} in test-run`);
         testRunTracker.activeTestRuns[this.session.id] = this;
 
         await this.emit('start');
@@ -347,14 +348,19 @@ export default class TestRun extends AsyncEventEmitter {
         const onDisconnected = err => this._disconnect(err);
 
         this.browserConnection.once('disconnected', onDisconnected);
-
+        console.log(new Date()+`Browser connection waiting for connected: ${this.session.id}`);
         await this.once('connected');
+        console.log(new Date()+`Browser connection connected: ${this.session.id}`);
 
+        console.log(new Date()+`Browser connection waiting for being ready: ${this.session.id}`);
         await this.emit('ready');
+        console.log(new Date()+`Browser connection is ready: ${this.session.id}`);
 
         if (await this._runBeforeHook()) {
+            console.log(new Date()+`Browser connection is executing test fn: ${this.session.id}`);
             await this._executeTestFn(PHASE.inTest, this.test.fn);
             await this._runAfterHook();
+            console.log(new Date()+`Browser connection is executing test fn: ${this.session.id}`);
         }
 
         if (this.disconnected)
@@ -648,8 +654,9 @@ export default class TestRun extends AsyncEventEmitter {
         let errorAdapter = null;
         let error        = null;
         let result       = null;
-
+        console.log(new Date()+`Execute action in test run ${apiActionName} ${callsite}`);
         await this.emitActionEvent('action-start', actionArgs);
+        console.log(new Date()+`Execute action in test action start emitted ${apiActionName} ${callsite}`);
 
         const start = new Date();
 
@@ -659,6 +666,7 @@ export default class TestRun extends AsyncEventEmitter {
         catch (err) {
             error = err;
         }
+        console.log(new Date()+`Execute action in test action execution finished ${apiActionName} ${callsite}`);
 
         const duration = new Date() - start;
 
@@ -680,7 +688,7 @@ export default class TestRun extends AsyncEventEmitter {
         });
 
         await this.emitActionEvent('action-done', actionArgs);
-
+        console.log(new Date()+`Execute action in test action action done emmited ${apiActionName} ${callsite}`);
         if (error)
             throw error;
 

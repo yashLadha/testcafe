@@ -16,6 +16,7 @@ import BrowserConnectionGateway from './gateway';
 import BrowserJob from '../../runner/browser-job';
 import WarningLog from '../../notifications/warning-log';
 import BrowserProvider from '../provider';
+import { inspect } from 'util';
 
 const IDLE_PAGE_TEMPLATE                         = read('../../client/browser/idle-page/index.html.mustache');
 const connections: Dictionary<BrowserConnection> = {};
@@ -153,6 +154,7 @@ export default class BrowserConnection extends EventEmitter {
 
     private async _runBrowser (): Promise<void> {
         try {
+            console.log(new Date() +`Broswer run started with url: ${this.url} for ${this.id}`);
             await this.provider.openBrowser(this.id, this.url, this.browserInfo.browserName, this.disableMultipleWindows);
 
             if (this.status !== BrowserConnectionStatus.ready)
@@ -167,6 +169,7 @@ export default class BrowserConnection extends EventEmitter {
                 this.browserInfo.providerName + ':' + this.browserInfo.browserName,
                 err.stack
             ));
+            console.log(new Date()+`Error captured while closing the browser: ${inspect(err, { depth: 0 })}`);
         }
     }
 
@@ -196,6 +199,8 @@ export default class BrowserConnection extends EventEmitter {
 
     private _waitForHeartbeat (): void {
         this.heartbeatTimeout = setTimeout(() => {
+            console.log(new Date()+`Heart beat lapsed trying to disconnect ${this.id}`);
+
             const err = this._createBrowserDisconnectedError();
 
             this.status         = BrowserConnectionStatus.disconnected;
@@ -386,6 +391,7 @@ export default class BrowserConnection extends EventEmitter {
     }
 
     public heartbeat (): HeartbeatStatusResult {
+        console.log(new Date()+`Heartbeat request came ${this.id}`);
         clearTimeout(this.heartbeatTimeout as NodeJS.Timeout);
         this._waitForHeartbeat();
 

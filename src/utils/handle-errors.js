@@ -65,6 +65,7 @@ export function registerErrorHandlers () {
 }
 
 export function addRunningTest (testRun) {
+    console.log(new Date()+`Test added to currently running test: ${testRun.id}`);
     runningTests[testRun.id] = testRun;
 }
 

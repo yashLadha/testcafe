@@ -12,6 +12,7 @@ import FixtureHookController from './fixture-hook-controller';
 import { Dictionary } from '../configuration/interfaces';
 import { ActionEventArg } from './interfaces';
 import TestRunErrorFormattableAdapter from '../errors/test-run/formattable-adapter';
+import { inspect} from 'util' ;
 
 const QUARANTINE_THRESHOLD = 3;
 const DISCONNECT_THRESHOLD = 3;
@@ -198,6 +199,7 @@ export default class TestRunController extends AsyncEventEmitter {
     }
 
     private async _emitTestRunStart (): Promise<void> {
+        console.log(new Date()+`_emitTestRunStart started`)
         await this.emit('test-run-start');
     }
 
@@ -219,6 +221,8 @@ export default class TestRunController extends AsyncEventEmitter {
         this._disconnectionCount++;
 
         const disconnectionThresholdExceedeed = this._disconnectionCount >= DISCONNECT_THRESHOLD;
+        console.log(new Date()+` disconnection count ${this._disconnectionCount}, connection - ${connection.id}, disconnect Threashold ${disconnectionThresholdExceedeed}`);
+        console.log(new Date()+`${inspect(connection, false, 0)}`);
 
         return connection
             .processDisconnection(disconnectionThresholdExceedeed)
@@ -247,7 +251,8 @@ export default class TestRunController extends AsyncEventEmitter {
 
     public async start (connection: BrowserConnection): Promise<string | null> {
         const testRun = await this._createTestRun(connection);
-
+        console.log(new Date()+`Test run started in test-run-controller`);
+        
         const hookOk = await this._fixtureHookController.runFixtureBeforeHookIfNecessary(testRun);
 
         if (this.test.skip || !hookOk) {

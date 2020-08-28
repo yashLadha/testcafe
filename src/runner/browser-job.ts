@@ -34,7 +34,7 @@ export default class BrowserJob extends AsyncEventEmitter {
 
     public constructor (tests: Test[], browserConnections: BrowserConnection[], proxy: Proxy, screenshots: Screenshots, warningLog: WarningLog, fixtureHookController: FixtureHookController, opts: Dictionary<OptionValue>) {
         super();
-
+        console.log(new Date()+`Browser connection established`);
         this._started = false;
 
         this._total                = 0;
@@ -65,6 +65,7 @@ export default class BrowserJob extends AsyncEventEmitter {
             await this.emit('test-run-create', testRunInfo);
         });
         testRunController.on('test-run-start', async () => {
+            console.log(new Date()+`Test run started in the job for id: ${testRunController.testRun.id}`);
             await this.emit('test-run-start', testRunController.testRun);
         });
         testRunController.on('test-run-ready', async () => {
@@ -107,6 +108,7 @@ export default class BrowserJob extends AsyncEventEmitter {
     }
 
     private _onTestRunRestart (testRunController: TestRunController): void {
+        console.log(new Date()+`Test run restarted ${testRunController.testRun.id}`);
         this._removeFromCompletionQueue(testRunController);
         this._testRunControllerQueue.unshift(testRunController);
     }
