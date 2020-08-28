@@ -61,6 +61,7 @@ function isCurrentLocation (url) {
 //API
 export function startHeartbeat (heartbeatUrl, createXHR) {
     function heartbeat () {
+        console.log(`${Date.now()} Sending heart beat for the url: ${heartbeatUrl}`);
         sendXHR(heartbeatUrl, createXHR)
             .then(status => {
                 if (status.code === HeartbeatStatus.closing && !isCurrentLocation(status.url)) {
@@ -76,6 +77,7 @@ export function startHeartbeat (heartbeatUrl, createXHR) {
 }
 
 export function stopHeartbeat () {
+    console.log('Stop heart beat is called for the page');
     window.clearInterval(heartbeatIntervalId);
 }
 

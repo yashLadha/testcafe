@@ -1034,6 +1034,7 @@ export default class Driver extends serviceUtils.EventEmitter {
     }
 
     _stopInternal () {
+        console.log('Stop internal is requested');
         this.role = DriverRole.replica;
 
         browser.stopHeartbeat();
