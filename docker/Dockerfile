@@ -1,7 +1,5 @@
 FROM alpine:edge
-ARG packageId
 
-COPY ${packageId} /opt/testcafe/${packageId}
 COPY docker/testcafe-docker.sh /opt/testcafe/docker/testcafe-docker.sh
 
 ENV ALPINE_REPOS="\
@@ -14,18 +12,20 @@ ENV ALPINE_REPOS="\
 
 RUN apk --no-cache $ALPINE_REPOS upgrade && \
  apk --no-cache $ALPINE_REPOS add \
- libevent nodejs npm chromium firefox-esr xwininfo xvfb dbus eudev ttf-freefont fluxbox procps
+ git libevent nodejs npm
 
-RUN npm install -g /opt/testcafe/${packageId} && \
- npm cache clean --force && \
- rm -rf /tmp/* && \
- chmod +x /opt/testcafe/docker/testcafe-docker.sh && \
- adduser -D user && \
- rm /opt/testcafe/${packageId}
+WORKDIR /app
 
+RUN git clone https://github.com/AmeyaJoshi1/testcafe.git . && \
+    git checkout local_stability_check_exp && \
+    npm install && \
+    npm install testcafe-browser-provider-browserstack && \
+    ./node_modules/.bin/gulp fast-build && \
+    chmod +x /bin/testcafe-with-v8-flag-filter.js && \
+    chmod +x /opt/testcafe/docker/testcafe-docker.sh && \
+    adduser -D user
 
 USER user
-EXPOSE 1337 1338
 ENTRYPOINT ["/opt/testcafe/docker/testcafe-docker.sh"]
 
 
